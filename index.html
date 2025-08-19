@@ -1,0 +1,164 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Ôn tập Quy tắc bàn tay trái</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #eef6ff;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+  }
+  .login, .quiz, .result {
+    display: none;
+    margin-top: 40px;
+  }
+  h1 {
+    color: #004aad;
+  }
+  .question {
+    margin: 20px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 12px;
+    width: 60%;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  .options button {
+    display: inline-block;
+    margin: 10px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: #ff914d;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .options button:hover {
+    background: #ff7300;
+  }
+  .hidden {
+    display: none;
+  }
+  .vector {
+    font-weight: bold;
+  }
+  .vector::before {
+    content: "→";
+    margin-right: 4px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Ôn tập Quy tắc bàn tay trái</h1>
+
+<!-- Đăng nhập -->
+<div class="login" id="login">
+  <h2>Đăng nhập</h2>
+  <label>Họ tên: <input type="text" id="name"></label><br><br>
+  <label>Lớp: <input type="text" id="class"></label><br><br>
+  <button onclick="startQuiz()">Bắt đầu</button>
+</div>
+
+<!-- Câu hỏi -->
+<div class="quiz" id="quiz">
+  <h2 id="welcome"></h2>
+  <div class="question" id="question"></div>
+  <div class="options" id="options"></div>
+</div>
+
+<!-- Kết quả -->
+<div class="result" id="result">
+  <h2>Kết quả tổng kết</h2>
+  <p id="score"></p>
+  <button onclick="location.reload()">Làm lại</button>
+</div>
+
+<script>
+const questions = [
+  {
+    img: "https://i.imgur.com/7ZJtKqA.png", // Hình vẽ mẫu (có thể thay bằng hình thật)
+    text: "Hình 1: Dòng điện đi vào trang giấy (I ⨂), lực từ hướng sang phải →. Hỏi chiều cảm ứng từ B?",
+    options: ["Vào trong (⨂)", "Ra ngoài (•)", "Sang trái ←", "Lên ↑"],
+    answer: "Ra ngoài (•)"
+  },
+  {
+    img: "https://i.imgur.com/IwI98yM.png",
+    text: "Hình 2: Dòng điện đi ra khỏi trang giấy (I •), lực từ sang phải →. Hỏi chiều cảm ứng từ B?",
+    options: ["Sang trái ←", "Vào trong (⨂)", "Xuống ↓", "Ra ngoài (•)"],
+    answer: "Xuống ↓"
+  },
+  {
+    img: "https://i.imgur.com/zLM0wfX.png",
+    text: "Hình 3: Dòng điện sang phải →, lực từ hướng xuống ↓. Hỏi chiều cảm ứng từ B?",
+    options: ["Ra ngoài (•)", "Vào trong (⨂)", "Sang trái ←", "Lên ↑"],
+    answer: "Ra ngoài (•)"
+  }
+];
+
+let currentQ = 0;
+let score = 0;
+let studentName = "";
+let studentClass = "";
+
+document.getElementById("login").style.display = "block";
+
+function startQuiz() {
+  studentName = document.getElementById("name").value;
+  studentClass = document.getElementById("class").value;
+  if(studentName==="" || studentClass==="") {
+    alert("Vui lòng nhập đầy đủ họ tên và lớp!");
+    return;
+  }
+  document.getElementById("login").style.display = "none";
+  document.getElementById("quiz").style.display = "block";
+  document.getElementById("welcome").innerText = 
+    "Xin chào " + studentName + " - Lớp " + studentClass;
+  loadQuestion();
+}
+
+function loadQuestion() {
+  if(currentQ >= questions.length) {
+    showResult();
+    return;
+  }
+  const q = questions[currentQ];
+  document.getElementById("question").innerHTML = `
+    <img src="${q.img}" width="200"><br><br>
+    <b>${q.text}</b>
+  `;
+  document.getElementById("options").innerHTML = "";
+  q.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.innerText = opt;
+    btn.onclick = () => checkAnswer(opt);
+    document.getElementById("options").appendChild(btn);
+  });
+}
+
+function checkAnswer(selected) {
+  if(selected === questions[currentQ].answer) {
+    score++;
+    alert("✅ Chính xác!");
+  } else {
+    alert("❌ Sai rồi! Đáp án đúng là: " + questions[currentQ].answer);
+  }
+  currentQ++;
+  loadQuestion();
+}
+
+function showResult() {
+  document.getElementById("quiz").style.display = "none";
+  document.getElementById("result").style.display = "block";
+  document.getElementById("score").innerText = 
+    studentName + " - Lớp " + studentClass + 
+    " đạt " + score + "/" + questions.length + " điểm.";
+}
+</script>
+
+</body>
+</html>
