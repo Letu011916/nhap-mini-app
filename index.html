@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🧲⚡ Quy tắc bàn tay trái - Xác định lực từ</title>
@@ -1114,13 +1111,13 @@
                             <th>Họ tên</th>
                             <th>Lớp</th>
                             <th>Ngày</th>
-                            <th>Lượt truy cập</th>
+                            <th>Giờ</th>
                             <th>Câu làm</th>
                             <th>Câu đúng</th>
                             <th>Câu sai</th>
                             <th>Tỷ lệ (%)</th>
                             <th>Điểm (10)</th>
-                            <th>Điểm (100)</th>
+                            <th>Thời gian</th>
                         </tr>
                     </thead>
                     <tbody id="statsTableBody">
@@ -1413,6 +1410,7 @@
             saveStudentSession(score, totalQuestions, timeSpent) {
                 const today = new Date();
                 const dateStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+                const timeStr = `${today.getHours().toString().padStart(2, '0')}:${today.getMinutes().toString().padStart(2, '0')}`;
                 
                 // Calculate scores
                 const correctAnswers = score;
@@ -1420,6 +1418,12 @@
                 const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
                 const score10 = Math.round((accuracy / 100) * 10 * 100) / 100; // Round to 2 decimal places
                 const score100 = accuracy;
+                
+                // Format time spent
+                const totalSeconds = Math.floor(timeSpent / 1000);
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                const timeSpentFormatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 
                 // Get or create student sessions array
                 let studentSessions = this.loadStudentSessions();
@@ -1430,6 +1434,7 @@
                     name: studentName,
                     class: studentClass,
                     date: dateStr,
+                    time: timeStr,
                     accessCount: 1, // Each game session counts as 1 access
                     totalQuestions: totalQuestions,
                     correctAnswers: correctAnswers,
@@ -1438,6 +1443,7 @@
                     score10: score10,
                     score100: score100,
                     timeSpent: timeSpent,
+                    timeSpentFormatted: timeSpentFormatted,
                     timestamp: Date.now()
                 };
                 
@@ -1449,6 +1455,45 @@
                 }
                 
                 this.saveStudentSessions(studentSessions);
+                
+                // Send data to Google Sheets
+                this.sendToGoogleSheets(sessionRecord);
+            }
+            
+            sendToGoogleSheets(sessionData) {
+                const googleSheetsUrl = 'https://letu011916.github.io/nhap-mini-app/';
+                
+                // Prepare data for Google Sheets
+                const dataToSend = {
+                    name: sessionData.name,
+                    class: sessionData.class,
+                    date: sessionData.date,
+                    time: sessionData.time,
+                    totalQuestions: sessionData.totalQuestions,
+                    correctAnswers: sessionData.correctAnswers,
+                    wrongAnswers: sessionData.wrongAnswers,
+                    accuracy: sessionData.accuracy,
+                    score10: sessionData.score10,
+                    score100: sessionData.score100,
+                    timeSpent: sessionData.timeSpentFormatted,
+                    subject: 'Vật lý - Quy tắc bàn tay trái',
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Send data using fetch API
+                fetch(googleSheetsUrl, {
+                    method: 'POST',
+                    mode: 'no-cors', // Important for cross-origin requests
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(dataToSend)
+                }).then(() => {
+                    console.log('✅ Dữ liệu đã được gửi lên Google Sheets');
+                }).catch(error => {
+                    console.warn('⚠️ Không thể gửi dữ liệu lên Google Sheets:', error);
+                    // Continue working offline - data is still saved locally
+                });
             }
             
             loadStudentSessions() {
@@ -2163,13 +2208,13 @@
                 let messageClass = '';
                 
                 if (accuracy >= 80) {
-                    message = '🎉 Xuất sắc! Em đã làm rất tốt 👏';
+                    message = '🎉 Xuất sắc! Em đã làm rất tốt 👏\n📊 Kết quả đã được gửi lên hệ thống thống kê!';
                     messageClass = 'excellent';
                 } else if (accuracy >= 50) {
-                    message = '💪 Khá tốt, em cần cố gắng thêm 💪';
+                    message = '💪 Khá tốt, em cần cố gắng thêm 💪\n📊 Kết quả đã được gửi lên hệ thống thống kê!';
                     messageClass = 'good';
                 } else {
-                    message = '🌱 Chưa đạt, em hãy luyện tập thêm nhé 🌱';
+                    message = '🌱 Chưa đạt, em hãy luyện tập thêm nhé 🌱\n📊 Kết quả đã được gửi lên hệ thống thống kê!';
                     messageClass = 'needs-improvement';
                 }
                 
@@ -2375,13 +2420,13 @@
                         <td style="text-align: left; font-weight: 600;">${session.name}</td>
                         <td>${session.class}</td>
                         <td>${session.date}</td>
-                        <td>${session.accessCount}</td>
+                        <td>${session.time || '--:--'}</td>
                         <td>${session.totalQuestions}</td>
                         <td style="color: #059669; font-weight: bold;">${session.correctAnswers}</td>
                         <td style="color: #dc2626; font-weight: bold;">${session.wrongAnswers}</td>
                         <td class="${scoreClass}">${session.accuracy}%</td>
                         <td class="${scoreClass}">${session.score10}</td>
-                        <td class="${scoreClass}">${session.score100}</td>
+                        <td class="${scoreClass}">${session.timeSpentFormatted || '--:--'}</td>
                     `;
                     
                     tableBody.appendChild(row);
@@ -2414,7 +2459,7 @@
             try {
                 // Create CSV content with UTF-8 BOM
                 let csvContent = '\uFEFF'; // BOM for UTF-8 encoding
-                csvContent += 'STT,Họ tên,Lớp,Ngày,Lượt truy cập,Câu làm,Câu đúng,Câu sai,Tỷ lệ (%),Điểm (10),Điểm (100)\n';
+                csvContent += 'STT,Họ tên,Lớp,Ngày,Giờ,Câu làm,Câu đúng,Câu sai,Tỷ lệ (%),Điểm (10),Thời gian làm bài\n';
                 
                 // Sort sessions by date (newest first)
                 const sortedSessions = [...sessions].sort((a, b) => b.timestamp - a.timestamp);
@@ -2425,13 +2470,13 @@
                         `"${session.name}"`,
                         `"${session.class}"`,
                         `"${session.date}"`,
-                        session.accessCount,
+                        `"${session.time || '--:--'}"`,
                         session.totalQuestions,
                         session.correctAnswers,
                         session.wrongAnswers,
                         session.accuracy,
                         session.score10,
-                        session.score100
+                        `"${session.timeSpentFormatted || '--:--'}"`
                     ].join(',');
                     csvContent += row + '\n';
                 });
@@ -2486,6 +2531,5 @@
             }
         };
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9726261017c7fdce',t:'MTc1NTczNzU1Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97270867369390b2',t:'MTc1NTc0NjgyNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
-
